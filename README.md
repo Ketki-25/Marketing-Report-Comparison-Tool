@@ -193,6 +193,4 @@ Questions? Issues? Suggestions?
 
 If you find this tool useful, please consider giving it a star on GitHub!
 
----
 
-**Made with ❤️ for marketers who need quick, reliable insights**
