@@ -1,0 +1,1876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marketing Report Comparison Tool</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #2d3748;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .upload-area {
+            background: white;
+            border: 3px dashed #cbd5e0;
+            border-radius: 12px;
+            padding: 60px 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .upload-area:hover {
+            border-color: #4299e1;
+            background: #f7fafc;
+        }
+
+        .upload-area.dragover {
+            border-color: #4299e1;
+            background: #ebf8ff;
+        }
+
+        .upload-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+
+        .upload-area h2 {
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+
+        .upload-area p {
+            color: #718096;
+        }
+
+        .files-list {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .files-list.show {
+            display: block;
+        }
+
+        .file-item {
+            padding: 12px;
+            background: #f7fafc;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .file-item.success {
+            background: #f0fff4;
+            border-left: 4px solid #48bb78;
+        }
+
+        .compare-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 30px;
+            display: none;
+        }
+
+        .compare-btn.show {
+            display: block;
+        }
+
+        .compare-btn:hover {
+            opacity: 0.9;
+        }
+
+        .results {
+            display: none;
+        }
+
+        .results.show {
+            display: block;
+        }
+
+        .section {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .section-title {
+            font-size: 24px;
+            color: #2d3748;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .charts-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .chart-box {
+            background: #fafafa;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        .chart-box h3 {
+            font-size: 14px;
+            color: #4a5568;
+            margin-bottom: 15px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 300px;
+        }
+
+        .channel-legend {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+            font-size: 12px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+        }
+
+        .metrics-row {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .metric-box {
+            background: #f8f9fa;
+            padding: 12px 8px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+        }
+
+        .metric-box h4 {
+            font-size: 11px;
+            color: #718096;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        .metric-box .value {
+            font-size: 22px;
+            font-weight: bold;
+            color: #2d3748;
+            margin-bottom: 5px;
+        }
+
+        .metric-box .change {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 10px;
+            display: inline-block;
+        }
+
+        .change.positive {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .change.negative {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+
+        .summary {
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #4299e1;
+        }
+
+        .summary p {
+            color: #2d3748;
+            line-height: 1.8;
+            margin-bottom: 8px;
+        }
+
+        .summary strong {
+            color: #2b6cb0;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .debug-info {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 12px;
+            font-family: monospace;
+            display: none; /* Always hidden now */
+        }
+
+        @media (max-width: 768px) {
+            .charts-row {
+                grid-template-columns: 1fr;
+            }
+            .metrics-row {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .metrics-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* Print Styles */
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+
+            .upload-area,
+            .files-list,
+            .compare-btn,
+            .debug-info,
+            #printBtn {
+                display: none !important;
+            }
+
+            .section {
+                page-break-inside: avoid;
+                margin-bottom: 20px;
+            }
+
+            .chart-wrapper {
+                page-break-inside: avoid;
+            }
+
+            h1 {
+                font-size: 24px;
+                margin-bottom: 20px;
+            }
+
+            .section-title {
+                font-size: 20px;
+                page-break-after: avoid;
+            }
+
+            .results {
+                display: block !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Marketing Report Comparison Tool</h1>
+
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">📁</div>
+            <h2>Drop Your PDF Reports Here</h2>
+            <p>Upload 2 monthly reports to compare</p>
+            <input type="file" id="fileInput" accept=".pdf" multiple>
+        </div>
+
+        <div class="files-list" id="filesList">
+            <h3 style="margin-bottom: 15px;">Loaded Reports:</h3>
+            <div id="filesContainer"></div>
+        </div>
+
+        <div class="debug-info" id="debugInfo"></div>
+
+        <button class="compare-btn" id="compareBtn">🔍 Compare Reports</button>
+
+        <div class="results" id="results">
+            <div style="text-align: right; margin-bottom: 20px;">
+                <button id="printBtn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 12px 24px; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    🖨️ Print Report
+                </button>
+            </div>
+
+            <div class="section" style="background: white; border-left: 5px solid #4299e1;">
+                <h2 class="section-title" style="color: #2d3748;">📊 Executive Insights</h2>
+                <div id="insightsSummary" style="font-size: 15px; line-height: 1.9; color: #2d3748;"></div>
+            </div>
+
+            <div class="section" style="background: white; border-left: 5px solid #ed8936;">
+                <h2 class="section-title" style="color: #2d3748;">🚨 Automated Alerts</h2>
+                <div id="automatedAlerts" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px;"></div>
+            </div>
+
+            <div class="section" id="trendSection" style="display: none; background: white; border-left: 5px solid #805ad5;">
+                <h2 class="section-title" style="color: #2d3748;">📈 Trend Analysis (Multi-Month)</h2>
+                <p style="margin-bottom: 20px; color: #718096; font-size: 14px;">Analyzing <strong id="trendMonthCount"></strong> months of data to identify patterns and trends.</p>
+                
+                <div style="margin-bottom: 30px;">
+                    <div class="chart-wrapper" style="height: 350px;">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table id="trendTable" style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                        <thead>
+                            <tr style="background: #f7fafc; border-bottom: 2px solid #e2e8f0;">
+                                <th style="padding: 12px; text-align: left; font-weight: 600; color: #2d3748;">Month</th>
+                                <th style="padding: 12px; text-align: right; font-weight: 600; color: #2d3748;">Sessions</th>
+                                <th style="padding: 12px; text-align: right; font-weight: 600; color: #2d3748;">Change</th>
+                                <th style="padding: 12px; text-align: right; font-weight: 600; color: #2d3748;">Direct</th>
+                                <th style="padding: 12px; text-align: right; font-weight: 600; color: #2d3748;">Organic</th>
+                                <th style="padding: 12px; text-align: right; font-weight: 600; color: #2d3748;">Paid</th>
+                            </tr>
+                        </thead>
+                        <tbody id="trendTableBody"></tbody>
+                    </table>
+                </div>
+
+                <div id="trendSummary" style="background: #f7fafc; padding: 20px; border-radius: 8px; margin-top: 20px; border-left: 4px solid #805ad5;"></div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">User Acquisition (Traffic Channels)</h2>
+                
+                <div class="charts-row">
+                    <div class="chart-box">
+                        <h3>Monthly Sessions Comparison</h3>
+                        <div class="chart-wrapper">
+                            <canvas id="barChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-box">
+                        <h3>Channel Distribution</h3>
+                        <div class="chart-wrapper">
+                            <canvas id="donutChart"></canvas>
+                        </div>
+                        <div class="channel-legend" id="channelLegend"></div>
+                    </div>
+                </div>
+
+                <div class="metrics-row" id="metricsRow"></div>
+
+                <div class="summary" id="summary"></div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">Location Performance</h2>
+                
+                <div style="margin-bottom: 30px;">
+                    <div class="chart-wrapper" style="height: 400px;">
+                        <canvas id="locationChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="metrics-row" id="locationMetrics" style="grid-template-columns: repeat(10, 1fr); gap: 10px;"></div>
+
+                <div class="summary" id="locationSummary"></div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">Google Ads Performance</h2>
+                
+                <div style="margin-bottom: 30px;">
+                    <div class="chart-wrapper" style="height: 350px;">
+                        <canvas id="googleAdsChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="metrics-row" id="googleAdsMetrics" style="grid-template-columns: repeat(4, 1fr);"></div>
+
+                <div class="summary" id="googleAdsSummary"></div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">Google Business Profile</h2>
+                
+                <div style="margin-bottom: 30px;">
+                    <div class="chart-wrapper" style="height: 350px;">
+                        <canvas id="gbpChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="metrics-row" id="gbpMetrics" style="grid-template-columns: repeat(5, 1fr);"></div>
+
+                <div class="summary" id="gbpSummary"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        let uploadedFiles = [];
+
+        // Debug function - disabled
+        function addDebug(message) {
+            // Debug disabled in production
+            console.log(message);
+        }
+
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const filesList = document.getElementById('filesList');
+        const filesContainer = document.getElementById('filesContainer');
+        const compareBtn = document.getElementById('compareBtn');
+        const results = document.getElementById('results');
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        compareBtn.addEventListener('click', compareReports);
+
+        // Print button functionality
+        const printBtn = document.getElementById('printBtn');
+        if (printBtn) {
+            printBtn.addEventListener('click', function() {
+                window.print();
+            });
+        }
+
+        async function handleFiles(files) {
+            console.log('\n\n=== NEW FILE UPLOAD SESSION ===');
+            console.log(`User selected ${files.length} file(s)`);
+            
+            // CRITICAL: Clear everything
+            uploadedFiles = [];
+            filesContainer.innerHTML = '';
+            compareBtn.classList.remove('show');
+            results.classList.remove('show');
+            fileInput.value = '';
+            
+            console.log('Cleared all previous data. Starting fresh...\n');
+            
+            // Process each file sequentially
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                console.log(`\n--- Processing file ${i + 1}/${files.length}: ${file.name} ---`);
+                
+                if (file.type === 'application/pdf') {
+                    try {
+                        await processFile(file);
+                        console.log(`✓ Successfully processed ${file.name}`);
+                    } catch (error) {
+                        console.error(`✗ Failed to process ${file.name}:`, error);
+                    }
+                } else {
+                    console.log(`✗ Skipped ${file.name} - not a PDF`);
+                }
+            }
+
+            console.log(`\n=== PROCESSING COMPLETE ===`);
+            console.log(`Total files successfully loaded: ${uploadedFiles.length}`);
+            
+            // Log summary of what was loaded
+            uploadedFiles.forEach((item, idx) => {
+                console.log(`  ${idx + 1}. ${item.data.month} - ${item.data.sessions} total sessions`);
+            });
+
+            if (uploadedFiles.length >= 2) {
+                console.log('\n✓ Ready to compare! Showing compare button.\n');
+                compareBtn.classList.add('show');
+            } else {
+                console.log('\n⚠ Need at least 2 files to compare\n');
+            }
+        }
+
+        async function processFile(file) {
+            console.log(`  Loading PDF: ${file.name}...`);
+            
+            const fileItem = document.createElement('div');
+            fileItem.className = 'file-item';
+            fileItem.innerHTML = `<span>📄 ${file.name}</span><span>Loading...</span>`;
+            filesContainer.appendChild(fileItem);
+            filesList.classList.add('show');
+
+            try {
+                const data = await extractPDFData(file);
+                
+                // Verify data was extracted
+                if (!data || !data.month) {
+                    throw new Error('Failed to extract month from PDF');
+                }
+                
+                uploadedFiles.push({ file, data });
+                
+                fileItem.classList.add('success');
+                fileItem.innerHTML = `<span>📄 ${file.name}</span><span>✅ ${data.month}</span>`;
+                
+                console.log(`  ✓ ${file.name}: ${data.month}, ${data.sessions} sessions, ${Object.keys(data.locations).length} cities`);
+                
+            } catch (error) {
+                console.error(`  ✗ Error processing ${file.name}:`, error);
+                fileItem.innerHTML = `<span>📄 ${file.name}</span><span style="color: #e53e3e;">❌ Error: ${error.message}</span>`;
+                throw error; // Re-throw so handleFiles knows it failed
+            }
+        }
+
+        async function extractPDFData(file) {
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
+            
+            let fullText = '';
+            
+            // Extract text page by page, preserving structure better
+            for (let i = 1; i <= pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const textContent = await page.getTextContent();
+                
+                // Sort items by position (Y coordinate, then X)
+                const items = textContent.items.sort((a, b) => {
+                    const yDiff = Math.abs(a.transform[5] - b.transform[5]);
+                    if (yDiff > 5) {
+                        return b.transform[5] - a.transform[5]; // Top to bottom
+                    }
+                    return a.transform[4] - b.transform[4]; // Left to right
+                });
+                
+                let lastY = null;
+                let lineText = '';
+                
+                items.forEach(item => {
+                    const y = item.transform[5];
+                    
+                    // New line if Y position changed significantly
+                    if (lastY !== null && Math.abs(y - lastY) > 5) {
+                        fullText += lineText + '\n';
+                        lineText = '';
+                    }
+                    
+                    lineText += item.str + ' ';
+                    lastY = y;
+                });
+                
+                fullText += lineText + '\n';
+            }
+
+            // Debug: Show multiple samples
+            addDebug(`Total extracted text length: ${fullText.length} characters`);
+            
+            // Find and show the Cities section
+            const citiesIdx = fullText.indexOf('CITY');
+            if (citiesIdx !== -1) {
+                const sample = fullText.substring(citiesIdx, citiesIdx + 500);
+                addDebug(`Cities table sample: "${sample.substring(0, 200)}"`);
+            }
+            
+            // Look for the actual data lines
+            const lines = fullText.split('\n');
+            let foundDataLines = [];
+            lines.forEach(line => {
+                if (/Montreal.*\d{3,}/.test(line) || /Toronto.*\d{2,}/.test(line)) {
+                    foundDataLines.push(line);
+                }
+            });
+            
+            if (foundDataLines.length > 0) {
+                addDebug(`Found data lines: ${foundDataLines.length}`);
+                foundDataLines.slice(0, 3).forEach(line => {
+                    addDebug(`  Data: "${line}"`);
+                });
+            }
+
+            const data = {
+                month: extractMonth(fullText),
+                sessions: 0,
+                channels: {},
+                locations: {},
+                googleAds: {},
+                gbp: {}
+            };
+
+            console.log(`[${file.name}] Extracted month: ${data.month}`);
+
+            // Extract channel data
+            const channelPatterns = [
+                'Direct',
+                'Organic Search',
+                'Paid Search',
+                'Organic Social',
+                'Paid Social',
+                'Referral'
+            ];
+
+            channelPatterns.forEach(channel => {
+                const escapedChannel = channel.replace(/\s+/g, '\\s+');
+                const regex = new RegExp(escapedChannel + '\\s+(\\d{1,3}(?:,\\d{3})*)', 'i');
+                const match = fullText.match(regex);
+                
+                if (match) {
+                    const value = parseInt(match[1].replace(/,/g, ''));
+                    data.channels[channel] = value;
+                    data.sessions += value;
+                }
+            });
+
+            console.log(`[${file.name}] Total sessions: ${data.sessions}`);
+            console.log(`[${file.name}] Channels:`, JSON.stringify(data.channels));
+
+            // Extract location data - NOW USING LINE-BY-LINE APPROACH
+            const cityNames = [
+                'Montreal', 'Toronto', 'Pointe-Claire', 'Lanzhou', 
+                'Singapore', 'Beaconsfield', 'Kirkland', 'Ashburn',
+                'Columbus', 'Dorval', 'Laval'
+            ];
+
+            // Process line by line to find city data
+            lines.forEach(line => {
+                cityNames.forEach(city => {
+                    // Check if this line contains the city name AND numbers
+                    if (line.includes(city)) {
+                        // Extract all numbers from this line
+                        const numbers = line.match(/\d{1,3}(?:,\d{3})*/g);
+                        if (numbers && numbers.length > 0) {
+                            // First number is sessions
+                            const sessions = parseInt(numbers[0].replace(/,/g, ''));
+                            // Only store if not already found and is reasonable
+                            if (!data.locations[city] && sessions > 0) {
+                                data.locations[city] = sessions;
+                                addDebug(`Found ${city}: ${sessions} from line "${line.substring(0, 50)}"`);
+                            }
+                        }
+                    }
+                });
+                
+                // Check for (not set)
+                if (line.includes('(not set)') || line.includes('not set')) {
+                    const numbers = line.match(/\d{1,3}(?:,\d{3})*/g);
+                    if (numbers && numbers.length > 0 && !data.locations['(not set)']) {
+                        const sessions = parseInt(numbers[0].replace(/,/g, ''));
+                        if (sessions > 0) {
+                            data.locations['(not set)'] = sessions;
+                            addDebug(`Found (not set): ${sessions}`);
+                        }
+                    }
+                }
+            });
+
+            addDebug(`Total locations found: ${Object.keys(data.locations).length}`);
+
+            // Extract Google Ads data
+            // DEBUG: Show all lines that contain percentage signs
+            const linesWithPercent = lines.filter(line => line.includes('%'));
+            addDebug(`Lines containing %: ${linesWithPercent.length}`);
+            linesWithPercent.forEach((line, idx) => {
+                if (idx < 25) { // Show first 25 lines
+                    addDebug(`  [${idx}] % line: "${line.substring(0, 100)}"`);
+                }
+            });
+            
+            // Look for pattern with space before %
+            // Pattern: "561 5.42 % 38 6.77 %"
+            const adsPattern = /(\d{1,3}(?:,\d{3})*)\s+([\d.]+)\s*%\s+(\d{1,3}(?:,\d{3})*)\s+([\d.]+)\s*%/g;
+            const matches = [...fullText.matchAll(adsPattern)];
+            
+            addDebug(`Found ${matches.length} potential patterns with flexible % spacing`);
+            
+            for (const match of matches) {
+                const clicks = parseInt(match[1].replace(/,/g, ''));
+                const ctr = parseFloat(match[2]);
+                const conversions = parseInt(match[3].replace(/,/g, ''));
+                const convRate = parseFloat(match[4]);
+                
+                addDebug(`Pattern: clicks=${clicks}, ctr=${ctr}%, conv=${conversions}, rate=${convRate}%`);
+                
+                // Validate for Google Ads
+                if (ctr > 0.1 && ctr < 50 && 
+                    convRate > 0.1 && convRate < 50 && 
+                    clicks >= 10 && clicks < 100000 &&
+                    conversions < clicks &&
+                    conversions > 0) {
+                    
+                    data.googleAds.clicks = clicks;
+                    data.googleAds.ctr = ctr;
+                    data.googleAds.conversions = conversions;
+                    data.googleAds.conversionRate = convRate;
+                    
+                    addDebug(`✓ Accepted as Google Ads data!`);
+                    break;
+                }
+            }
+            
+            if (!data.googleAds.clicks) {
+                addDebug(`No valid Google Ads data found`);
+            }
+
+            // Extract Google Business Profile data
+            // Format: "Business Profile Impressions 5,864", "Calls 225", etc.
+            
+            // Impressions
+            const impressionsMatch = fullText.match(/Business Pro\s?fi\s?le Impressions\s+(\d{1,3}(?:,\d{3})*)/i);
+            if (impressionsMatch) {
+                data.gbp.impressions = parseInt(impressionsMatch[1].replace(/,/g, ''));
+                addDebug(`Found GBP Impressions: ${data.gbp.impressions}`);
+            }
+            
+            // Interactions
+            const interactionsMatch = fullText.match(/Business Pro\s?fi\s?le Interactions\s+(\d{1,3}(?:,\d{3})*)/i);
+            if (interactionsMatch) {
+                data.gbp.interactions = parseInt(interactionsMatch[1].replace(/,/g, ''));
+                addDebug(`Found GBP Interactions: ${data.gbp.interactions}`);
+            }
+            
+            // Calls - need to find the line with just "Calls" followed by number
+            lines.forEach(line => {
+                if (/^Calls\s+(\d{1,3}(?:,\d{3})*)\s+/.test(line) && !data.gbp.calls) {
+                    const match = line.match(/^Calls\s+(\d{1,3}(?:,\d{3})*)/);
+                    if (match) {
+                        data.gbp.calls = parseInt(match[1].replace(/,/g, ''));
+                        addDebug(`Found GBP Calls: ${data.gbp.calls}`);
+                    }
+                }
+            });
+            
+            // Directions
+            lines.forEach(line => {
+                if (/Directions\s+(\d{1,3}(?:,\d{3})*)\s+/.test(line) && !data.gbp.directions) {
+                    const match = line.match(/Directions\s+(\d{1,3}(?:,\d{3})*)/);
+                    if (match) {
+                        data.gbp.directions = parseInt(match[1].replace(/,/g, ''));
+                        addDebug(`Found GBP Directions: ${data.gbp.directions}`);
+                    }
+                }
+            });
+            
+            // Website Clicks
+            lines.forEach(line => {
+                if (/Website Clicks\s+(\d{1,3}(?:,\d{3})*)\s+/.test(line) && !data.gbp.websiteClicks) {
+                    const match = line.match(/Website Clicks\s+(\d{1,3}(?:,\d{3})*)/);
+                    if (match) {
+                        data.gbp.websiteClicks = parseInt(match[1].replace(/,/g, ''));
+                        addDebug(`Found GBP Website Clicks: ${data.gbp.websiteClicks}`);
+                    }
+                }
+            });
+
+            return data;
+        }
+
+        function extractMonth(text) {
+            const match = text.match(/(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})/);
+            return match ? `${match[1]} ${match[2]}` : 'Unknown';
+        }
+
+        function compareReports() {
+            console.log('\n\n=== STARTING COMPARISON ===');
+            
+            if (uploadedFiles.length < 2) {
+                alert('Please upload at least 2 reports');
+                console.log('✗ Cannot compare: only', uploadedFiles.length, 'file(s) loaded');
+                return;
+            }
+
+            console.log(`Comparing ${uploadedFiles.length} reports...`);
+
+            // Sort by month
+            uploadedFiles.sort((a, b) => {
+                const monthOrder = {
+                    'January': 1, 'February': 2, 'March': 3, 'April': 4,
+                    'May': 5, 'June': 6, 'July': 7, 'August': 8,
+                    'September': 9, 'October': 10, 'November': 11, 'December': 12
+                };
+                
+                const aMonth = monthOrder[a.data.month.split(' ')[0]] || 0;
+                const bMonth = monthOrder[b.data.month.split(' ')[0]] || 0;
+                return aMonth - bMonth;
+            });
+
+            const oldReport = uploadedFiles[0].data;
+            const newReport = uploadedFiles[uploadedFiles.length - 1].data;
+
+            console.log('\n📊 COMPARISON SETUP:');
+            console.log(`  OLD: ${oldReport.month}`);
+            console.log(`    - Sessions: ${oldReport.sessions}`);
+            console.log(`    - Direct: ${oldReport.channels.Direct || 0}`);
+            console.log(`    - Organic Search: ${oldReport.channels['Organic Search'] || 0}`);
+            console.log(`  NEW: ${newReport.month}`);
+            console.log(`    - Sessions: ${newReport.sessions}`);
+            console.log(`    - Direct: ${newReport.channels.Direct || 0}`);
+            console.log(`    - Organic Search: ${newReport.channels['Organic Search'] || 0}`);
+            
+            if (oldReport.month === newReport.month) {
+                console.warn('⚠ WARNING: Both reports appear to be from the same month!');
+            }
+            
+            if (oldReport.sessions === newReport.sessions) {
+                console.warn('⚠ WARNING: Both reports have identical session counts!');
+            }
+
+            console.log('\nGenerating comparison charts...\n');
+
+            // Show trend analysis if 3+ months uploaded
+            if (uploadedFiles.length >= 3) {
+                console.log(`📈 Creating trend analysis for ${uploadedFiles.length} months`);
+                createTrendAnalysis(uploadedFiles);
+                document.getElementById('trendSection').style.display = 'block';
+            } else {
+                document.getElementById('trendSection').style.display = 'none';
+            }
+
+            displayComparison(oldReport, newReport);
+            results.classList.add('show');
+            results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            
+            console.log('✓ Comparison complete!\n');
+        }
+
+        function createTrendAnalysis(allFiles) {
+            // Sort files by month order (already sorted in compareReports)
+            const monthOrder = {
+                'January': 1, 'February': 2, 'March': 3, 'April': 4,
+                'May': 5, 'June': 6, 'July': 7, 'August': 8,
+                'September': 9, 'October': 10, 'November': 11, 'December': 12
+            };
+
+            // Extract data for each month
+            const months = allFiles.map(f => f.data.month);
+            const sessions = allFiles.map(f => f.data.sessions);
+            const directTraffic = allFiles.map(f => f.data.channels.Direct || 0);
+            const organicSearch = allFiles.map(f => f.data.channels['Organic Search'] || 0);
+            const paidSearch = allFiles.map(f => f.data.channels['Paid Search'] || 0);
+
+            // Update month count
+            document.getElementById('trendMonthCount').textContent = allFiles.length;
+
+            // Create trend chart
+            const ctx = document.getElementById('trendChart');
+            if (window.trendChartInstance) window.trendChartInstance.destroy();
+            
+            window.trendChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: [
+                        {
+                            label: 'Total Sessions',
+                            data: sessions,
+                            borderColor: '#4299e1',
+                            backgroundColor: 'rgba(66, 153, 225, 0.1)',
+                            borderWidth: 3,
+                            tension: 0.3,
+                            pointRadius: 6,
+                            pointHoverRadius: 8,
+                            fill: true
+                        },
+                        {
+                            label: 'Direct Traffic',
+                            data: directTraffic,
+                            borderColor: '#48bb78',
+                            backgroundColor: 'rgba(72, 187, 120, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            pointRadius: 5,
+                            fill: false
+                        },
+                        {
+                            label: 'Organic Search',
+                            data: organicSearch,
+                            borderColor: '#ed8936',
+                            backgroundColor: 'rgba(237, 137, 54, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            pointRadius: 5,
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: v => v.toLocaleString()
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Create table
+            const tbody = document.getElementById('trendTableBody');
+            tbody.innerHTML = '';
+            
+            allFiles.forEach((file, idx) => {
+                const prevSessions = idx > 0 ? allFiles[idx - 1].data.sessions : null;
+                const change = prevSessions ? calculatePercentChange(prevSessions, file.data.sessions) : null;
+                const changeColor = change > 0 ? '#38a169' : change < 0 ? '#e53e3e' : '#718096';
+                const changeText = change !== null ? `${change > 0 ? '+' : ''}${change.toFixed(1)}%` : '-';
+                
+                tbody.innerHTML += `
+                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                        <td style="padding: 12px; font-weight: 600; color: #2d3748;">${file.data.month}</td>
+                        <td style="padding: 12px; text-align: right; font-weight: 600;">${file.data.sessions.toLocaleString()}</td>
+                        <td style="padding: 12px; text-align: right; color: ${changeColor}; font-weight: 600;">${changeText}</td>
+                        <td style="padding: 12px; text-align: right;">${(file.data.channels.Direct || 0).toLocaleString()}</td>
+                        <td style="padding: 12px; text-align: right;">${(file.data.channels['Organic Search'] || 0).toLocaleString()}</td>
+                        <td style="padding: 12px; text-align: right;">${(file.data.channels['Paid Search'] || 0).toLocaleString()}</td>
+                    </tr>
+                `;
+            });
+
+            // Create summary
+            const firstMonth = allFiles[0];
+            const lastMonth = allFiles[allFiles.length - 1];
+            const overallChange = calculatePercentChange(firstMonth.data.sessions, lastMonth.data.sessions);
+            const avgSessions = sessions.reduce((a, b) => a + b, 0) / sessions.length;
+            
+            // Calculate trend (growing, declining, stable)
+            let trendDirection = 'stable';
+            let consecutiveGrowth = 0;
+            let consecutiveDecline = 0;
+            
+            for (let i = 1; i < allFiles.length; i++) {
+                const change = calculatePercentChange(allFiles[i-1].data.sessions, allFiles[i].data.sessions);
+                if (change > 5) consecutiveGrowth++;
+                else if (change < -5) consecutiveDecline++;
+            }
+            
+            if (consecutiveGrowth >= allFiles.length - 1) trendDirection = 'consistently growing';
+            else if (consecutiveDecline >= allFiles.length - 1) trendDirection = 'consistently declining';
+            else if (consecutiveGrowth > consecutiveDecline) trendDirection = 'mostly growing';
+            else if (consecutiveDecline > consecutiveGrowth) trendDirection = 'mostly declining';
+            
+            const summaryHTML = `
+                <p style="margin-bottom: 10px; color: #2d3748; line-height: 1.8;">
+                    <strong>Overall Trend:</strong> Sessions are <strong>${trendDirection}</strong> across ${allFiles.length} months.
+                </p>
+                <p style="margin-bottom: 10px; color: #2d3748; line-height: 1.8;">
+                    <strong>Total Change:</strong> From ${firstMonth.data.month} to ${lastMonth.data.month}, sessions ${overallChange > 0 ? 'increased' : 'decreased'} by <strong style="color: ${overallChange > 0 ? '#38a169' : '#e53e3e'};">${Math.abs(overallChange).toFixed(1)}%</strong> (${firstMonth.data.sessions.toLocaleString()} → ${lastMonth.data.sessions.toLocaleString()}).
+                </p>
+                <p style="color: #2d3748; line-height: 1.8;">
+                    <strong>Average Monthly Sessions:</strong> ${Math.round(avgSessions).toLocaleString()}
+                </p>
+            `;
+            
+            document.getElementById('trendSummary').innerHTML = summaryHTML;
+        }
+
+        function displayComparison(oldData, newData) {
+            createInsightsSummary(oldData, newData);
+            createAutomatedAlerts(oldData, newData);
+            createBarChart(oldData, newData);
+            createDonutChart(newData);
+            createMetricsGrid(oldData, newData);
+            createSummary(oldData, newData);
+            createLocationChart(oldData, newData);
+            createLocationMetrics(oldData, newData);
+            createLocationSummary(oldData, newData);
+            createGoogleAdsChart(oldData, newData);
+            createGoogleAdsMetrics(oldData, newData);
+            createGoogleAdsSummary(oldData, newData);
+            createGBPChart(oldData, newData);
+            createGBPMetrics(oldData, newData);
+            createGBPSummary(oldData, newData);
+        }
+
+        function createBarChart(oldData, newData) {
+            const ctx = document.getElementById('barChart');
+            
+            if (window.barChartInstance) {
+                window.barChartInstance.destroy();
+            }
+
+            const allChannels = [...new Set([
+                ...Object.keys(oldData.channels),
+                ...Object.keys(newData.channels)
+            ])];
+
+            const oldValues = allChannels.map(ch => oldData.channels[ch] || 0);
+            const newValues = allChannels.map(ch => newData.channels[ch] || 0);
+
+            window.barChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: allChannels,
+                    datasets: [
+                        {
+                            label: oldData.month,
+                            data: oldValues,
+                            backgroundColor: 'rgba(156, 163, 175, 0.7)',
+                            borderColor: 'rgba(156, 163, 175, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: newData.month,
+                            data: newValues,
+                            backgroundColor: 'rgba(72, 187, 120, 0.7)',
+                            borderColor: 'rgba(72, 187, 120, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return value.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createDonutChart(data) {
+            const ctx = document.getElementById('donutChart');
+            
+            if (window.donutChartInstance) {
+                window.donutChartInstance.destroy();
+            }
+
+            const channelNames = Object.keys(data.channels);
+            const channelValues = Object.values(data.channels);
+            const total = channelValues.reduce((sum, val) => sum + val, 0);
+
+            const colors = {
+                'Direct': '#4A90E2',
+                'Organic Search': '#50C878',
+                'Paid Search': '#F5A623',
+                'Organic Social': '#9013FE',
+                'Referral': '#E74C3C',
+                'Paid Social': '#17B8BE'
+            };
+
+            const backgroundColors = channelNames.map(ch => colors[ch] || '#95a5a6');
+
+            window.donutChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: channelNames,
+                    datasets: [{
+                        data: channelValues,
+                        backgroundColor: backgroundColors,
+                        borderWidth: 3,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed || 0;
+                                    const percentage = ((value / total) * 100).toFixed(1);
+                                    return `${label}: ${value.toLocaleString()} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '65%'
+                }
+            });
+
+            const legendDiv = document.getElementById('channelLegend');
+            legendDiv.innerHTML = channelNames.map((channel, i) => {
+                const value = channelValues[i];
+                const percentage = ((value / total) * 100).toFixed(1);
+                return `
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: ${backgroundColors[i]}"></div>
+                        <span style="color: #4a5568;">${channel}: ${value.toLocaleString()} | ${percentage}%</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function createMetricsGrid(oldData, newData) {
+            const grid = document.getElementById('metricsRow');
+            grid.innerHTML = '';
+
+            const totalChange = calculatePercentChange(oldData.sessions, newData.sessions);
+            grid.innerHTML += createMetricBox('Sessions', newData.sessions, totalChange);
+
+            const allChannels = [...new Set([
+                ...Object.keys(oldData.channels),
+                ...Object.keys(newData.channels)
+            ])];
+
+            allChannels.forEach(channel => {
+                const oldValue = oldData.channels[channel] || 0;
+                const newValue = newData.channels[channel] || 0;
+                const change = calculatePercentChange(oldValue, newValue);
+                
+                grid.innerHTML += createMetricBox(channel, newValue, change);
+            });
+        }
+
+        function createMetricBox(title, value, changePercent) {
+            const changeClass = changePercent > 0 ? 'positive' : changePercent < 0 ? 'negative' : '';
+            const arrow = changePercent > 0 ? '↑' : changePercent < 0 ? '↓' : '';
+            
+            return `
+                <div class="metric-box">
+                    <h4>${title}</h4>
+                    <div class="value">${value.toLocaleString()}</div>
+                    <span class="change ${changeClass}">${arrow} ${Math.abs(changePercent).toFixed(1)}%</span>
+                </div>
+            `;
+        }
+
+        function createInsightsSummary(oldData, newData) {
+            const summary = document.getElementById('insightsSummary');
+            let insights = [];
+            
+            // Sessions insight
+            const sessionsChange = calculatePercentChange(oldData.sessions, newData.sessions);
+            const sessionsDirection = sessionsChange > 0 ? 'increased' : 'decreased';
+            const sessionsColor = sessionsChange > 0 ? '#38a169' : '#e53e3e';
+            insights.push(`<p style="margin-bottom: 12px;"><strong>Sessions:</strong> Sessions ${sessionsDirection} by <strong style="color: ${sessionsColor}; font-size: 16px;">${Math.abs(sessionsChange).toFixed(1)}%</strong> from ${oldData.month} (${oldData.sessions.toLocaleString()}) to ${newData.month} (${newData.sessions.toLocaleString()}).</p>`);
+            
+            // Channels insight - find biggest change
+            let biggestChannelChange = { channel: '', percent: 0, direction: '', oldVal: 0, newVal: 0 };
+            Object.keys(newData.channels).forEach(channel => {
+                const oldVal = oldData.channels[channel] || 0;
+                const newVal = newData.channels[channel];
+                const change = calculatePercentChange(oldVal, newVal);
+                if (Math.abs(change) > Math.abs(biggestChannelChange.percent)) {
+                    biggestChannelChange = { 
+                        channel, 
+                        percent: change, 
+                        direction: change > 0 ? 'increased' : 'decreased',
+                        oldVal,
+                        newVal
+                    };
+                }
+            });
+            if (biggestChannelChange.channel) {
+                const channelColor = biggestChannelChange.percent > 0 ? '#38a169' : '#e53e3e';
+                insights.push(`<p style="margin-bottom: 12px;"><strong>Channels:</strong> The largest change was in <strong>${biggestChannelChange.channel}</strong>, which ${biggestChannelChange.direction} <strong style="color: ${channelColor}; font-size: 16px;">${Math.abs(biggestChannelChange.percent).toFixed(1)}%</strong>.</p>`);
+            }
+            
+            // Google Ads insight
+            if (oldData.googleAds?.conversions && newData.googleAds?.conversions && oldData.googleAds?.ctr && newData.googleAds?.ctr) {
+                const convChange = calculatePercentChange(oldData.googleAds.conversions, newData.googleAds.conversions);
+                const ctrChange = calculatePercentChange(oldData.googleAds.ctr, newData.googleAds.ctr);
+                const convDirection = convChange > 0 ? 'increased' : 'decreased';
+                const ctrDirection = ctrChange > 0 ? 'increased' : 'decreased';
+                const convColor = convChange > 0 ? '#38a169' : '#e53e3e';
+                const ctrColor = ctrChange > 0 ? '#38a169' : '#e53e3e';
+                insights.push(`<p style="margin-bottom: 12px;"><strong>Google Ads:</strong> Conversions ${convDirection} <strong style="color: ${convColor}; font-size: 16px;">${Math.abs(convChange).toFixed(1)}%</strong> (${oldData.googleAds.conversions} → ${newData.googleAds.conversions}), and CTR ${ctrDirection} <strong style="color: ${ctrColor}; font-size: 16px;">${Math.abs(ctrChange).toFixed(1)}%</strong> (${oldData.googleAds.ctr.toFixed(2)}% → ${newData.googleAds.ctr.toFixed(2)}%).</p>`);
+            }
+            
+            // Location insight - top growth city
+            let topGrowthCity = { city: '', percent: -Infinity, oldVal: 0, newVal: 0 };
+            const allCities = [...new Set([...Object.keys(oldData.locations), ...Object.keys(newData.locations)])];
+            allCities.forEach(city => {
+                const oldVal = oldData.locations[city] || 0;
+                const newVal = newData.locations[city] || 0;
+                if (oldVal > 0) {
+                    const change = calculatePercentChange(oldVal, newVal);
+                    if (change > topGrowthCity.percent) {
+                        topGrowthCity = { city, percent: change, oldVal, newVal };
+                    }
+                }
+            });
+            if (topGrowthCity.city && topGrowthCity.percent > 0) {
+                insights.push(`<p style="margin-bottom: 12px;"><strong>Top Location:</strong> <strong>${topGrowthCity.city}</strong> showed the strongest growth at <strong style="color: #38a169; font-size: 16px;">+${topGrowthCity.percent.toFixed(1)}%</strong> (${topGrowthCity.oldVal.toLocaleString()} → ${topGrowthCity.newVal.toLocaleString()}).</p>`);
+            }
+            
+            // GBP insight
+            if (oldData.gbp?.impressions && newData.gbp?.impressions) {
+                const impChange = calculatePercentChange(oldData.gbp.impressions, newData.gbp.impressions);
+                const intChange = oldData.gbp?.interactions && newData.gbp?.interactions ? calculatePercentChange(oldData.gbp.interactions, newData.gbp.interactions) : null;
+                const impDirection = impChange > 0 ? 'increased' : 'decreased';
+                const impColor = impChange > 0 ? '#38a169' : '#e53e3e';
+                let gbpText = `<p style="margin-bottom: 12px;"><strong>Google Business Profile:</strong> Impressions ${impDirection} <strong style="color: ${impColor}; font-size: 16px;">${Math.abs(impChange).toFixed(1)}%</strong>`;
+                if (intChange !== null) {
+                    const intDirection = intChange > 0 ? 'increased' : 'decreased';
+                    const intColor = intChange > 0 ? '#38a169' : '#e53e3e';
+                    gbpText += `, and interactions ${intDirection} <strong style="color: ${intColor}; font-size: 16px;">${Math.abs(intChange).toFixed(1)}%</strong>`;
+                }
+                gbpText += '.</p>';
+                insights.push(gbpText);
+            }
+            
+            summary.innerHTML = insights.join('');
+        }
+
+        function createAutomatedAlerts(oldData, newData) {
+            const container = document.getElementById('automatedAlerts');
+            let alerts = [];
+
+            // Helper function to create alert box
+            function createAlert(type, title, message) {
+                const colors = {
+                    'critical': { bg: '#fed7d7', border: '#fc8181', icon: '🔴', title: 'RED ALERT' },
+                    'warning': { bg: '#feebc8', border: '#f6ad55', icon: '🟡', title: 'WARNING' },
+                    'success': { bg: '#c6f6d5', border: '#68d391', icon: '🟢', title: 'SUCCESS' }
+                };
+                const color = colors[type];
+                return `<div style="background: ${color.bg}; border-left: 5px solid ${color.border}; padding: 15px; border-radius: 8px;">
+                    <div style="font-weight: 700; font-size: 14px; color: #2d3748; margin-bottom: 5px;">${color.icon} ${color.title}</div>
+                    <div style="font-weight: 600; color: #2d3748; margin-bottom: 5px;">${title}</div>
+                    <div style="font-size: 14px; color: #4a5568;">${message}</div>
+                </div>`;
+            }
+
+            // Check Sessions
+            const sessionsChange = calculatePercentChange(oldData.sessions, newData.sessions);
+            if (sessionsChange < -25) {
+                alerts.push(createAlert('critical', 'Overall Traffic Down Significantly', 
+                    `Sessions decreased by ${Math.abs(sessionsChange).toFixed(1)}% (${oldData.sessions.toLocaleString()} → ${newData.sessions.toLocaleString()}). Immediate investigation needed.`));
+            } else if (sessionsChange > 50) {
+                alerts.push(createAlert('success', 'Exceptional Traffic Growth', 
+                    `Sessions increased by ${sessionsChange.toFixed(1)}% (${oldData.sessions.toLocaleString()} → ${newData.sessions.toLocaleString()}). Great performance!`));
+            }
+
+            // Check each channel
+            Object.keys(newData.channels).forEach(channel => {
+                const oldVal = oldData.channels[channel] || 0;
+                const newVal = newData.channels[channel];
+                const change = calculatePercentChange(oldVal, newVal);
+                
+                if (change < -50 && oldVal > 0) {
+                    alerts.push(createAlert('critical', `${channel} Dropped Significantly`, 
+                        `${channel} traffic dropped by ${Math.abs(change).toFixed(1)}% (${oldVal.toLocaleString()} → ${newVal.toLocaleString()}). Review campaigns immediately.`));
+                } else if (change > 50 && newVal > 100) {
+                    alerts.push(createAlert('success', `${channel} Performing Exceptionally`, 
+                        `${channel} traffic increased by ${change.toFixed(1)}% (${oldVal.toLocaleString()} → ${newVal.toLocaleString()}). Scale what's working!`));
+                } else if (change < -25 && change >= -50 && oldVal > 0) {
+                    alerts.push(createAlert('warning', `${channel} Declining`, 
+                        `${channel} traffic down ${Math.abs(change).toFixed(1)}% (${oldVal.toLocaleString()} → ${newVal.toLocaleString()}). Monitor closely.`));
+                }
+            });
+
+            // Check Google Ads
+            if (oldData.googleAds?.conversions && newData.googleAds?.conversions) {
+                const convChange = calculatePercentChange(oldData.googleAds.conversions, newData.googleAds.conversions);
+                if (convChange < -25) {
+                    alerts.push(createAlert('warning', 'Google Ads Conversions Down', 
+                        `Conversions dropped ${Math.abs(convChange).toFixed(1)}% (${oldData.googleAds.conversions} → ${newData.googleAds.conversions}). Check landing pages and targeting.`));
+                }
+                
+                const ctrChange = calculatePercentChange(oldData.googleAds.ctr, newData.googleAds.ctr);
+                if (ctrChange < -20) {
+                    alerts.push(createAlert('warning', 'Google Ads CTR Declining', 
+                        `CTR dropped ${Math.abs(ctrChange).toFixed(1)}% (${oldData.googleAds.ctr.toFixed(2)}% → ${newData.googleAds.ctr.toFixed(2)}%). Ad copy may need refresh.`));
+                }
+            }
+
+            // Check GBP
+            if (oldData.gbp?.impressions && newData.gbp?.impressions) {
+                const impChange = calculatePercentChange(oldData.gbp.impressions, newData.gbp.impressions);
+                if (impChange > 50) {
+                    alerts.push(createAlert('success', 'Google Business Profile Visibility Up', 
+                        `Impressions increased ${impChange.toFixed(1)}% (${oldData.gbp.impressions.toLocaleString()} → ${newData.gbp.impressions.toLocaleString()}). Local presence growing!`));
+                }
+            }
+
+            // Display alerts or show "no alerts" message
+            if (alerts.length === 0) {
+                container.innerHTML = `<div style="background: #e6fffa; border-left: 5px solid #38b2ac; padding: 15px; border-radius: 8px; grid-column: 1/-1;">
+                    <div style="font-weight: 700; font-size: 14px; color: #2d3748; margin-bottom: 5px;">✅ ALL GOOD</div>
+                    <div style="font-size: 14px; color: #4a5568;">No critical issues detected. Performance is within normal ranges.</div>
+                </div>`;
+            } else {
+                container.innerHTML = alerts.join('');
+            }
+        }
+
+        function calculatePercentChange(oldVal, newVal) {
+            if (oldVal === 0) return newVal > 0 ? 100 : 0;
+            return ((newVal - oldVal) / oldVal * 100);
+        }
+
+        function createSummary(oldData, newData) {
+            const summary = document.getElementById('summary');
+            const sessionsChange = calculatePercentChange(oldData.sessions, newData.sessions);
+
+            let topGrowth = { channel: '', percent: -Infinity };
+            Object.keys(newData.channels).forEach(channel => {
+                const oldVal = oldData.channels[channel] || 0;
+                const newVal = newData.channels[channel];
+                const change = calculatePercentChange(oldVal, newVal);
+                if (change > topGrowth.percent) {
+                    topGrowth = { channel, percent: change };
+                }
+            });
+
+            summary.innerHTML = `
+                <p><strong>Sessions:</strong> Sessions ${sessionsChange > 0 ? 'increased' : 'decreased'} by <strong>${Math.abs(sessionsChange).toFixed(1)}%</strong> from ${oldData.sessions.toLocaleString()} to ${newData.sessions.toLocaleString()}.</p>
+                ${topGrowth.channel ? `<p><strong>Top Growth:</strong> ${topGrowth.channel} up <strong>${topGrowth.percent.toFixed(1)}%</strong>.</p>` : ''}
+            `;
+        }
+
+        function createLocationChart(oldData, newData) {
+            const ctx = document.getElementById('locationChart');
+            
+            if (window.locationChartInstance) {
+                window.locationChartInstance.destroy();
+            }
+
+            const allCities = [...new Set([
+                ...Object.keys(oldData.locations),
+                ...Object.keys(newData.locations)
+            ])];
+
+            addDebug(`Creating location chart with ${allCities.length} cities`);
+
+            if (allCities.length === 0) {
+                addDebug('WARNING: No cities found for location chart!');
+                return;
+            }
+
+            allCities.sort((a, b) => {
+                const aVal = newData.locations[a] || 0;
+                const bVal = newData.locations[b] || 0;
+                return bVal - aVal;
+            });
+
+            const topCities = allCities.slice(0, 10);
+
+            const oldValues = topCities.map(city => oldData.locations[city] || 0);
+            const newValues = topCities.map(city => newData.locations[city] || 0);
+
+            const colors = [
+                '#4A90E2', '#50C878', '#F5A623', '#9013FE', '#E74C3C',
+                '#17B8BE', '#8E44AD', '#F39C12', '#27AE60', '#E67E22'
+            ];
+
+            const oldColors = topCities.map((_, i) => colors[i] + '60');
+            const newColors = topCities.map((_, i) => colors[i]);
+
+            window.locationChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: topCities,
+                    datasets: [
+                        {
+                            label: oldData.month,
+                            data: oldValues,
+                            backgroundColor: oldColors,
+                            borderColor: colors,
+                            borderWidth: 1
+                        },
+                        {
+                            label: newData.month,
+                            data: newValues,
+                            backgroundColor: newColors,
+                            borderColor: colors,
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'bottom'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return value.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createLocationMetrics(oldData, newData) {
+            const grid = document.getElementById('locationMetrics');
+            grid.innerHTML = '';
+
+            const allCities = [...new Set([
+                ...Object.keys(oldData.locations),
+                ...Object.keys(newData.locations)
+            ])];
+
+            if (allCities.length === 0) {
+                grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #e53e3e;">No location data found</p>';
+                return;
+            }
+
+            allCities.sort((a, b) => {
+                const aVal = newData.locations[a] || 0;
+                const bVal = newData.locations[b] || 0;
+                return bVal - aVal;
+            });
+
+            const topCities = allCities.slice(0, 10);
+
+            topCities.forEach(city => {
+                const oldValue = oldData.locations[city] || 0;
+                const newValue = newData.locations[city] || 0;
+                const change = calculatePercentChange(oldValue, newValue);
+                
+                grid.innerHTML += createMetricBox(city, newValue, change);
+            });
+        }
+
+        function createLocationSummary(oldData, newData) {
+            const summary = document.getElementById('locationSummary');
+
+            let topGrowth = { city: '', value: 0, percent: -Infinity };
+            let largestDecline = { city: '', value: 0, percent: Infinity };
+
+            const allCities = [...new Set([
+                ...Object.keys(oldData.locations),
+                ...Object.keys(newData.locations)
+            ])];
+
+            if (allCities.length === 0) {
+                summary.innerHTML = '<p>No location data available for comparison.</p>';
+                return;
+            }
+
+            allCities.forEach(city => {
+                const oldVal = oldData.locations[city] || 0;
+                const newVal = newData.locations[city] || 0;
+                const change = calculatePercentChange(oldVal, newVal);
+                
+                if (change > topGrowth.percent) {
+                    topGrowth = { 
+                        city, 
+                        value: newVal - oldVal, 
+                        percent: change 
+                    };
+                }
+                
+                if (change < largestDecline.percent && oldVal > 0) {
+                    largestDecline = { 
+                        city, 
+                        value: oldVal - newVal, 
+                        percent: change 
+                    };
+                }
+            });
+
+            let summaryHTML = '';
+            
+            if (topGrowth.city) {
+                const oldValue = oldData.locations[topGrowth.city] || 0;
+                const newValue = newData.locations[topGrowth.city] || 0;
+                summaryHTML += `<p><strong>Top Growth:</strong> ${topGrowth.city} increased by <strong>${topGrowth.percent.toFixed(1)}%</strong> (${oldValue} → ${newValue}).</p>`;
+            }
+            
+            if (largestDecline.city && largestDecline.percent < 0) {
+                const oldValue = oldData.locations[largestDecline.city] || 0;
+                const newValue = newData.locations[largestDecline.city] || 0;
+                summaryHTML += `<p><strong>Largest Decline:</strong> ${largestDecline.city} decreased by <strong>${Math.abs(largestDecline.percent).toFixed(1)}%</strong> (${oldValue} → ${newValue}).</p>`;
+            }
+
+            summary.innerHTML = summaryHTML;
+        }
+
+        function createGoogleAdsChart(oldData, newData) {
+            const ctx = document.getElementById('googleAdsChart');
+            
+            if (window.googleAdsChartInstance) {
+                window.googleAdsChartInstance.destroy();
+            }
+
+            // Separate metrics into two groups: counts and percentages
+            const oldClicks = (oldData.googleAds && oldData.googleAds.clicks) || 0;
+            const newClicks = (newData.googleAds && newData.googleAds.clicks) || 0;
+            const oldConversions = (oldData.googleAds && oldData.googleAds.conversions) || 0;
+            const newConversions = (newData.googleAds && newData.googleAds.conversions) || 0;
+            const oldCTR = (oldData.googleAds && oldData.googleAds.ctr) || 0;
+            const newCTR = (newData.googleAds && newData.googleAds.ctr) || 0;
+            const oldConvRate = (oldData.googleAds && oldData.googleAds.conversionRate) || 0;
+            const newConvRate = (newData.googleAds && newData.googleAds.conversionRate) || 0;
+
+            window.googleAdsChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Clicks', 'CTR (%)', 'Conversions', 'Conv. Rate (%)'],
+                    datasets: [
+                        {
+                            label: oldData.month,
+                            data: [oldClicks, oldCTR, oldConversions, oldConvRate],
+                            backgroundColor: 'rgba(156, 163, 175, 0.7)',
+                            borderColor: 'rgba(156, 163, 175, 1)',
+                            borderWidth: 1,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: newData.month,
+                            data: [newClicks, newCTR, newConversions, newConvRate],
+                            backgroundColor: 'rgba(66, 153, 225, 0.7)',
+                            borderColor: 'rgba(66, 153, 225, 1)',
+                            borderWidth: 1,
+                            yAxisID: 'y'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'bottom'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    const value = context.parsed.y;
+                                    const metricIndex = context.dataIndex;
+                                    
+                                    // Format based on metric type
+                                    if (metricIndex === 1 || metricIndex === 3) {
+                                        // CTR and Conversion Rate
+                                        label += value.toFixed(2) + '%';
+                                    } else {
+                                        // Clicks and Conversions
+                                        label += value.toLocaleString();
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            type: 'logarithmic',
+                            display: true,
+                            position: 'left',
+                            beginAtZero: false,
+                            min: 1,
+                            ticks: {
+                                callback: function(value, index, ticks) {
+                                    // Show clean numbers on log scale
+                                    if (value === 1 || value === 10 || value === 100 || value === 1000) {
+                                        return value.toLocaleString();
+                                    }
+                                    return '';
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Value (log scale)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createGoogleAdsMetrics(oldData, newData) {
+            const grid = document.getElementById('googleAdsMetrics');
+            grid.innerHTML = '';
+
+            const metrics = [
+                { label: 'Clicks', oldKey: 'clicks', newKey: 'clicks', suffix: '' },
+                { label: 'CTR', oldKey: 'ctr', newKey: 'ctr', suffix: '%' },
+                { label: 'Conversions', oldKey: 'conversions', newKey: 'conversions', suffix: '' },
+                { label: 'Conversion Rate', oldKey: 'conversionRate', newKey: 'conversionRate', suffix: '%' }
+            ];
+
+            metrics.forEach(metric => {
+                const oldValue = oldData.googleAds[metric.oldKey] || 0;
+                const newValue = newData.googleAds[metric.newKey] || 0;
+                const change = calculatePercentChange(oldValue, newValue);
+                
+                const changeClass = change > 0 ? 'positive' : change < 0 ? 'negative' : '';
+                const arrow = change > 0 ? '↑' : change < 0 ? '↓' : '';
+                
+                const displayValue = metric.suffix === '%' ? newValue.toFixed(2) : newValue.toLocaleString();
+                
+                grid.innerHTML += `
+                    <div class="metric-box">
+                        <h4>${metric.label}</h4>
+                        <div class="value">${displayValue}${metric.suffix}</div>
+                        <span class="change ${changeClass}">${arrow} ${Math.abs(change).toFixed(1)}%</span>
+                    </div>
+                `;
+            });
+        }
+
+        function createGoogleAdsSummary(oldData, newData) {
+            const summary = document.getElementById('googleAdsSummary');
+            
+            const clicksChange = calculatePercentChange(
+                oldData.googleAds.clicks || 0,
+                newData.googleAds.clicks || 0
+            );
+
+            const conversionsChange = calculatePercentChange(
+                oldData.googleAds.conversions || 0,
+                newData.googleAds.conversions || 0
+            );
+
+            const ctrChange = calculatePercentChange(
+                oldData.googleAds.ctr || 0,
+                newData.googleAds.ctr || 0
+            );
+
+            let summaryHTML = '';
+
+            if (oldData.googleAds.clicks && newData.googleAds.clicks) {
+                summaryHTML += `<p><strong>Clicks:</strong> ${clicksChange > 0 ? 'up' : 'down'} <strong>${Math.abs(clicksChange).toFixed(1)}%</strong> (${oldData.googleAds.clicks.toLocaleString()} → ${newData.googleAds.clicks.toLocaleString()}).</p>`;
+            }
+
+            if (oldData.googleAds.ctr && newData.googleAds.ctr) {
+                summaryHTML += `<p><strong>CTR:</strong> ${ctrChange > 0 ? 'improved' : 'declined'} by <strong>${Math.abs(ctrChange).toFixed(1)}%</strong> (${oldData.googleAds.ctr.toFixed(2)}% → ${newData.googleAds.ctr.toFixed(2)}%).</p>`;
+            }
+
+            if (oldData.googleAds.conversions && newData.googleAds.conversions) {
+                summaryHTML += `<p><strong>Conversions:</strong> ${conversionsChange > 0 ? 'increased' : 'decreased'} by <strong>${Math.abs(conversionsChange).toFixed(1)}%</strong> (${oldData.googleAds.conversions} → ${newData.googleAds.conversions}).</p>`;
+            }
+
+            summary.innerHTML = summaryHTML || '<p>Google Ads data not available for comparison.</p>';
+        }
+
+        function createGBPChart(oldData, newData) {
+            const ctx = document.getElementById('gbpChart');
+            
+            if (window.gbpChartInstance) {
+                window.gbpChartInstance.destroy();
+            }
+
+            const metrics = ['Impressions', 'Interactions', 'Calls', 'Directions', 'Website Clicks'];
+            
+            const oldValues = [
+                (oldData.gbp && oldData.gbp.impressions) || 0,
+                (oldData.gbp && oldData.gbp.interactions) || 0,
+                (oldData.gbp && oldData.gbp.calls) || 0,
+                (oldData.gbp && oldData.gbp.directions) || 0,
+                (oldData.gbp && oldData.gbp.websiteClicks) || 0
+            ];
+
+            const newValues = [
+                (newData.gbp && newData.gbp.impressions) || 0,
+                (newData.gbp && newData.gbp.interactions) || 0,
+                (newData.gbp && newData.gbp.calls) || 0,
+                (newData.gbp && newData.gbp.directions) || 0,
+                (newData.gbp && newData.gbp.websiteClicks) || 0
+            ];
+
+            window.gbpChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: metrics,
+                    datasets: [
+                        {
+                            label: oldData.month,
+                            data: oldValues,
+                            backgroundColor: 'rgba(156, 163, 175, 0.7)',
+                            borderColor: 'rgba(156, 163, 175, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: newData.month,
+                            data: newValues,
+                            backgroundColor: 'rgba(66, 153, 225, 0.7)',
+                            borderColor: 'rgba(66, 153, 225, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'bottom'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return value.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createGBPMetrics(oldData, newData) {
+            const grid = document.getElementById('gbpMetrics');
+            grid.innerHTML = '';
+
+            const metrics = [
+                { label: 'Impressions', oldKey: 'impressions', newKey: 'impressions' },
+                { label: 'Interactions', oldKey: 'interactions', newKey: 'interactions' },
+                { label: 'Calls', oldKey: 'calls', newKey: 'calls' },
+                { label: 'Directions', oldKey: 'directions', newKey: 'directions' },
+                { label: 'Website Clicks', oldKey: 'websiteClicks', newKey: 'websiteClicks' }
+            ];
+
+            metrics.forEach(metric => {
+                const oldValue = (oldData.gbp && oldData.gbp[metric.oldKey]) || 0;
+                const newValue = (newData.gbp && newData.gbp[metric.newKey]) || 0;
+                const change = calculatePercentChange(oldValue, newValue);
+                
+                grid.innerHTML += createMetricBox(metric.label, newValue, change);
+            });
+        }
+
+        function createGBPSummary(oldData, newData) {
+            const summary = document.getElementById('gbpSummary');
+            
+            const impressionsChange = calculatePercentChange(
+                (oldData.gbp && oldData.gbp.impressions) || 0,
+                (newData.gbp && newData.gbp.impressions) || 0
+            );
+
+            const interactionsChange = calculatePercentChange(
+                (oldData.gbp && oldData.gbp.interactions) || 0,
+                (newData.gbp && newData.gbp.interactions) || 0
+            );
+
+            const callsChange = calculatePercentChange(
+                (oldData.gbp && oldData.gbp.calls) || 0,
+                (newData.gbp && newData.gbp.calls) || 0
+            );
+
+            const directionsChange = calculatePercentChange(
+                (oldData.gbp && oldData.gbp.directions) || 0,
+                (newData.gbp && newData.gbp.directions) || 0
+            );
+
+            const websiteClicksChange = calculatePercentChange(
+                (oldData.gbp && oldData.gbp.websiteClicks) || 0,
+                (newData.gbp && newData.gbp.websiteClicks) || 0
+            );
+
+            let summaryHTML = '';
+
+            if (oldData.gbp && oldData.gbp.impressions && newData.gbp && newData.gbp.impressions) {
+                summaryHTML += `<p><strong>Impressions:</strong> ${impressionsChange > 0 ? 'up' : 'down'} <strong>${Math.abs(impressionsChange).toFixed(1)}%</strong> (${oldData.gbp.impressions.toLocaleString()} → ${newData.gbp.impressions.toLocaleString()}).</p>`;
+            }
+
+            if (oldData.gbp && oldData.gbp.interactions && newData.gbp && newData.gbp.interactions) {
+                summaryHTML += `<p><strong>Interactions:</strong> ${interactionsChange > 0 ? 'up' : 'down'} <strong>${Math.abs(interactionsChange).toFixed(1)}%</strong> (${oldData.gbp.interactions.toLocaleString()} → ${newData.gbp.interactions.toLocaleString()}).</p>`;
+            }
+
+            if (oldData.gbp && oldData.gbp.calls && newData.gbp && newData.gbp.calls) {
+                summaryHTML += `<p><strong>Calls:</strong> ${callsChange > 0 ? 'up' : 'down'} <strong>${Math.abs(callsChange).toFixed(1)}%</strong> (${oldData.gbp.calls} → ${newData.gbp.calls}).</p>`;
+            }
+
+            if (oldData.gbp && oldData.gbp.directions && newData.gbp && newData.gbp.directions) {
+                summaryHTML += `<p><strong>Directions:</strong> ${directionsChange > 0 ? 'up' : 'down'} <strong>${Math.abs(directionsChange).toFixed(1)}%</strong> (${oldData.gbp.directions} → ${newData.gbp.directions}).</p>`;
+            }
+
+            if (oldData.gbp && oldData.gbp.websiteClicks && newData.gbp && newData.gbp.websiteClicks) {
+                summaryHTML += `<p><strong>Website Clicks:</strong> ${websiteClicksChange > 0 ? 'up' : 'down'} <strong>${Math.abs(websiteClicksChange).toFixed(1)}%</strong> (${oldData.gbp.websiteClicks} → ${newData.gbp.websiteClicks}).</p>`;
+            }
+
+            summary.innerHTML = summaryHTML || '<p>Google Business Profile data not available for comparison.</p>';
+        }
+    </script>
+</body>
+</html>
